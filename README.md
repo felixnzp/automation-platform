@@ -1,17 +1,16 @@
-﻿# Automation Platform
+﻿# Automation Platform 自动化运维 Web 平台
 
-Automation Platform is a full-stack AutoOps web console for network devices.
+基于 FastAPI + Vue3 的前后端分离自动化运维平台，用于统一管理网络设备并执行批量任务（巡检、NTP、SNMP）。
 
-## Features
+## 1. 功能说明
 
-- Device management (CRUD + search)
-- Batch audit task execution
-- Batch NTP configuration task execution
-- Batch SNMP configuration task execution
-- Task history and result details
-- Simulated automation modules with unified `run(devices, params)` interface
+- 设备管理：新增、编辑、删除、搜索设备
+- 批量任务：批量执行 `audit`、`ntp`、`snmp`
+- 任务记录：查看任务历史、成功失败统计
+- 任务详情：按设备查看执行结果
+- 日志：`system.log`、`task.log`、`error.log`
 
-## Project Structure
+## 2. 项目结构
 
 ```text
 automation-platform
@@ -19,82 +18,87 @@ automation-platform
 │   ├── app
 │   │   ├── main.py
 │   │   ├── api
-│   │   │   ├── device_api.py
-│   │   │   ├── task_api.py
-│   │   │   └── auth_api.py
 │   │   ├── models
-│   │   │   ├── device.py
-│   │   │   └── task.py
 │   │   ├── database
-│   │   │   └── database.py
 │   │   ├── services
-│   │   │   ├── device_service.py
-│   │   │   └── task_service.py
 │   │   ├── automation
-│   │   │   ├── audit_module.py
-│   │   │   ├── ntp_module.py
-│   │   │   └── snmp_module.py
 │   │   └── utils
-│   │       └── logger.py
 │   ├── logs
-│   │   ├── system.log
-│   │   ├── task.log
-│   │   └── error.log
 │   └── requirements.txt
 ├── frontend
 │   ├── src
 │   │   ├── views
-│   │   │   ├── Login.vue
-│   │   │   ├── Dashboard.vue
-│   │   │   ├── DeviceList.vue
-│   │   │   ├── TaskExecute.vue
-│   │   │   └── TaskHistory.vue
 │   │   ├── router
 │   │   ├── api
 │   │   └── components
 └── README.md
 ```
 
-## Backend Setup
-
-### Requirements
+## 3. 环境要求
 
 - Python 3.10+
+- Node.js 18+
+- npm 9+
 
-### Start backend
+## 4. 运行方法
 
-```bash
-cd backend
+### 4.1 启动后端
+
+```powershell
+cd D:\automation-platform\backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Backend URL: `http://127.0.0.1:8000`
+后端地址：`http://127.0.0.1:8000`
 
-### Default login
+### 4.2 启动前端
 
-- username: `admin`
-- password: `admin123`
-
-## Frontend Setup
-
-### Requirements
-
-- Node.js 18+
-
-### Start frontend
-
-```bash
-cd frontend
+```powershell
+cd D:\automation-platform\frontend
 npm install
 npm run dev
 ```
 
-Frontend URL: `http://127.0.0.1:5173`
+前端地址：`http://127.0.0.1:5173`
 
-## API Overview
+## 5. 使用方法
 
-Base prefix: `/api`
+### 5.1 登录
+
+1. 打开 `http://127.0.0.1:5173`
+2. 使用默认账号登录：
+   - 用户名：`admin`
+   - 密码：`admin123`
+
+### 5.2 设备管理
+
+1. 进入 `Device List`
+2. 点击“新增设备”录入设备信息
+3. 可按名称/IP/分组/位置搜索
+4. 支持编辑和删除
+
+### 5.3 执行任务
+
+1. 进入 `Task Execute`
+2. 多选设备
+3. 选择任务按钮：
+   - 执行巡检
+   - 配置 NTP（可填写 `timezone`、`offset`、`ntp_server`）
+   - 配置 SNMP（可填写 `community`）
+4. 执行后会返回任务 ID
+
+### 5.4 查看历史
+
+1. 进入 `Task History`
+2. 查看任务类型、开始/结束时间、成功/失败数量
+3. 点击“详情”查看每台设备执行结果
+
+## 6. API 说明
+
+接口统一前缀：`/api`
 
 - `POST /api/login`
 - `GET /api/devices`
@@ -107,20 +111,57 @@ Base prefix: `/api`
 - `GET /api/tasks`
 - `GET /api/tasks/{id}`
 
-## Database
+## 7. API 调用示例
 
-SQLite database file is created automatically at:
+### 7.1 登录
 
-- `backend/automation.db`
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+```
 
-Tables:
+### 7.2 新增设备
 
-- `devices`
-- `tasks`
-- `task_results`
+```bash
+curl -X POST http://127.0.0.1:8000/api/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"core-sw1",
+    "ip":"10.1.1.1",
+    "username":"admin",
+    "password":"admin",
+    "port":22,
+    "device_type":"huawei",
+    "group_name":"core",
+    "location":"datacenter",
+    "enable":1
+  }'
+```
 
-## Notes
+### 7.3 执行 NTP 任务
 
-- Automation modules currently simulate results and do not require real SSH sessions.
-- The `netmiko` dependency is included for future integration with real devices.
-- Logging files are located in `backend/logs/`.
+```bash
+curl -X POST http://127.0.0.1:8000/api/tasks/ntp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "devices":[1,2],
+    "timezone":"BJ",
+    "offset":"08:00:00",
+    "ntp_server":"10.18.101.2"
+  }'
+```
+
+## 8. 数据库与日志
+
+- SQLite 文件：`backend/automation.db`
+- 数据表：`devices`、`tasks`、`task_results`
+- 日志目录：`backend/logs/`
+  - `system.log`
+  - `task.log`
+  - `error.log`
+
+## 9. 说明
+
+- 当前自动化模块为模拟执行，未建立真实 SSH 会话。
+- 后续可在 `backend/app/automation/*.py` 中替换为真实 Netmiko 逻辑。
