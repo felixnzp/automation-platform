@@ -32,3 +32,23 @@ class TaskResult(Base):
     end_time = Column(String, default="")
 
     task = relationship("Task", back_populates="results")
+
+
+class ScheduledTask(Base):
+    __tablename__ = "scheduled_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    task_type = Column(String, nullable=False)
+    target_mode = Column(String, nullable=False, default="all")
+    target_group = Column(String, default="")
+    target_device_ids = Column(String, default="[]")
+    # JSON string for task parameters (e.g. server inspection thresholds/items).
+    params = Column(String, default="{}")
+    cycle_type = Column(String, nullable=False, default="daily")
+    run_time = Column(String, nullable=False, default="08:00")
+    cron_expr = Column(String, default="")
+    enabled = Column(Integer, default=1)
+    last_run_at = Column(String, default="")
+    created_at = Column(String, nullable=False)
+    updated_at = Column(String, nullable=False)

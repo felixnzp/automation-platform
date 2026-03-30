@@ -1,167 +1,108 @@
-﻿# Automation Platform 自动化运维 Web 平台
+﻿# 安室智能 自动化运维平台（automation-platform）
 
-基于 FastAPI + Vue3 的前后端分离自动化运维平台，用于统一管理网络设备并执行批量任务（巡检、NTP、SNMP）。
+本项目为 Windows 环境下的自动化运维 Web 平台，提供网络设备与服务器的资产管理、巡检任务（即时/定时）、配置中心能力，以及主页（原“总览大屏”）等可视化页面。
 
-## 1. 功能说明
+## 技术栈
 
-- 设备管理：新增、编辑、删除、搜索设备
-- 批量任务：批量执行 `audit`、`ntp`、`snmp`
-- 任务记录：查看任务历史、成功失败统计
-- 任务详情：按设备查看执行结果
-- 日志：`system.log`、`task.log`、`error.log`
+- 后端：FastAPI + SQLAlchemy + SQLite
+- 前端：Vue 3 + Element Plus + Vite + Axios + Vue Router
 
-## 2. 项目结构
+## 目录结构
 
 ```text
-automation-platform
-├── backend
-│   ├── app
-│   │   ├── main.py
-│   │   ├── api
-│   │   ├── models
-│   │   ├── database
-│   │   ├── services
-│   │   ├── automation
-│   │   └── utils
-│   ├── logs
-│   └── requirements.txt
-├── frontend
-│   ├── src
-│   │   ├── views
-│   │   ├── router
-│   │   ├── api
-│   │   └── components
-└── README.md
+D:\automation-platform
+  backend\           # FastAPI 后端（含 SQLite 数据库 automation.db）
+  frontend\          # Vue3 前端
+  devices\           # 设备拓扑/映射等数据文件（例如 NetDevices.xlsx）
+  start-lan-dev.ps1  # 一键启动（局域网可访问）
 ```
 
-## 3. 环境要求
+## 环境要求
 
-- Python 3.10+
+- Windows PowerShell 5.1+（或 PowerShell 7+）
+- Python 3.12+
 - Node.js 18+
-- npm 9+
 
-## 4. 运行方法
+## 一键启动（推荐）
 
-### 4.1 启动后端
+脚本会分别打开两个 PowerShell 窗口启动后端和前端，并将服务绑定到 `0.0.0.0`，便于局域网访问。
+
+```powershell
+cd D:\automation-platform
+.\start-lan-dev.ps1
+```
+
+访问地址：
+
+- 前端：`http://<你的电脑IP>:80`
+- 后端：`http://<你的电脑IP>:8000`
+- API 文档：`http://<你的电脑IP>:8000/docs`
+
+说明：
+
+- 若端口 `80` 被占用，可在 `start-lan-dev.ps1` 中调整前端端口（或改用 Vite 默认端口）。
+- 若其他电脑访问不了，请检查 Windows 防火墙是否放行 `80/8000` 端口。
+
+## 手动启动（首次安装/排障）
+
+### 1）启动后端
 
 ```powershell
 cd D:\automation-platform\backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-后端地址：`http://127.0.0.1:8000`
-
-### 4.2 启动前端
+### 2）启动前端
 
 ```powershell
 cd D:\automation-platform\frontend
 npm install
-npm run dev
+npm run dev -- --host 0.0.0.0 --port 80
 ```
 
-前端地址：`http://127.0.0.1:5173`
+## 默认登录
 
-## 5. 使用方法
+- 用户名：`admin`
+- 密码：`admin123`
 
-### 5.1 登录
+## 核心功能概览（当前版本）
 
-1. 打开 `http://127.0.0.1:5173`
-2. 使用默认账号登录：
-   - 用户名：`admin`
-   - 密码：`admin123`
+- 主页：网络/服务器视图切换、拓扑展示、设备详情联动、最近任务
+- 设备中心：
+  - 网络设备管理：增删改查、状态检测
+  - 服务器管理：增删改查、连接测试（WinRM/SSH）
+- 任务中心：
+  - 即时任务：网络巡检、服务器巡检等
+  - 计划任务：支持按周期/cron 执行
+- 配置中心：
+  - 端口查询（按 IP / 按 MAC）
+  - VLAN 修改（含 trunk 放通检查、端口 flap、配置保存）
+- 日志中心：任务/配置操作日志查询
+- 告警中心：告警聚合、筛选（若已启用）
 
-### 5.2 设备管理
+## 主要接口（后端路由前缀）
 
-1. 进入 `Device List`
-2. 点击“新增设备”录入设备信息
-3. 可按名称/IP/分组/位置搜索
-4. 支持编辑和删除
+- 认证：`/api/*`（登录等）
+- 设备：`/api/devices/*`
+- 服务器：`/api/servers/*`
+- 任务：`/api/tasks/*`
+- 配置中心：`/api/config/*`
+- 端口查询（重构接口）：`/api/port-query/*`
+- 主页数据：`/api/dashboard/*`
+- 告警：`/api/alerts/*`
 
-### 5.3 执行任务
+以 `http://<IP>:8000/docs` 为准查看当前实际接口与入参。
 
-1. 进入 `Task Execute`
-2. 多选设备
-3. 选择任务按钮：
-   - 执行巡检
-   - 配置 NTP（可填写 `timezone`、`offset`、`ntp_server`）
-   - 配置 SNMP（可填写 `community`）
-4. 执行后会返回任务 ID
-
-### 5.4 查看历史
-
-1. 进入 `Task History`
-2. 查看任务类型、开始/结束时间、成功/失败数量
-3. 点击“详情”查看每台设备执行结果
-
-## 6. API 说明
-
-接口统一前缀：`/api`
-
-- `POST /api/login`
-- `GET /api/devices`
-- `POST /api/devices`
-- `PUT /api/devices/{id}`
-- `DELETE /api/devices/{id}`
-- `POST /api/tasks/audit`
-- `POST /api/tasks/ntp`
-- `POST /api/tasks/snmp`
-- `GET /api/tasks`
-- `GET /api/tasks/{id}`
-
-## 7. API 调用示例
-
-### 7.1 登录
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-```
-
-### 7.2 新增设备
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/devices \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name":"core-sw1",
-    "ip":"10.1.1.1",
-    "username":"admin",
-    "password":"admin",
-    "port":22,
-    "device_type":"huawei",
-    "group_name":"core",
-    "location":"datacenter",
-    "enable":1
-  }'
-```
-
-### 7.3 执行 NTP 任务
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/tasks/ntp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "devices":[1,2],
-    "timezone":"BJ",
-    "offset":"08:00:00",
-    "ntp_server":"10.18.101.2"
-  }'
-```
-
-## 8. 数据库与日志
+## 数据库
 
 - SQLite 文件：`backend/automation.db`
-- 数据表：`devices`、`tasks`、`task_results`
-- 日志目录：`backend/logs/`
-  - `system.log`
-  - `task.log`
-  - `error.log`
 
-## 9. 说明
+## 开发定位
 
-- 当前自动化模块为模拟执行，未建立真实 SSH 会话。
-- 后续可在 `backend/app/automation/*.py` 中替换为真实 Netmiko 逻辑。
+- 前端路由入口：`frontend/src/router/index.js`
+- 主布局（左侧菜单/顶部栏）：`frontend/src/components/LayoutShell.vue`
+- 主页页面：`frontend/src/views/Dashboard.vue`
+- 配置中心页面（含端口查询）：`frontend/src/views/ConfigCenter.vue`

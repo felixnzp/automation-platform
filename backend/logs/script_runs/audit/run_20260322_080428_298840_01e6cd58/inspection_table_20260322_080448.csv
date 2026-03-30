@@ -1,0 +1,2 @@
+﻿host,cpu,mem,ntp,cpu_level,mem_level,ntp_level,alert_count,alert_items,设备健康总评,time
+10.18.100.32,12%,51%,正常,OK,OK,OK,0,无,OK,2026-03-22 08:04:48

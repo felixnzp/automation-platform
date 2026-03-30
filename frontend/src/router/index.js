@@ -3,7 +3,9 @@ import Login from "../views/Login.vue";
 import Dashboard from "../views/Dashboard.vue";
 import DeviceList from "../views/DeviceList.vue";
 import TaskExecute from "../views/TaskExecute.vue";
+import TaskScheduled from "../views/TaskScheduled.vue";
 import TaskHistory from "../views/TaskHistory.vue";
+import ConfigCenter from "../views/ConfigCenter.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -11,6 +13,8 @@ const routes = [
   { path: "/dashboard", component: Dashboard },
   { path: "/devices", component: DeviceList },
   { path: "/tasks/execute", component: TaskExecute },
+  { path: "/tasks/scheduled", component: TaskScheduled },
+  { path: "/config-center", component: ConfigCenter },
   { path: "/tasks/history", component: TaskHistory },
 ];
 
@@ -20,16 +24,18 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
-  if (to.path === "/login") {
-    next();
+  const token = localStorage.getItem("token");
+
+  if (to.path === "/login" && token) {
+    next("/dashboard");
     return;
   }
 
-  const token = localStorage.getItem("token");
-  if (!token) {
+  if (to.path !== "/login" && !token) {
     next("/login");
     return;
   }
+
   next();
 });
 

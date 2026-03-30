@@ -1,19 +1,12 @@
-﻿from datetime import datetime
+from __future__ import annotations
+
+from app.automation.script_runner import map_audit_rows_to_results, run_audit_script
 
 
-# Simulated audit module. Replace with Netmiko logic later.
+# Keep the unified interface: run(devices, params)
 def run(devices, params):
-    results = []
-    for device in devices:
-        now = datetime.now().isoformat(timespec="seconds")
-        results.append(
-            {
-                "device_ip": device["ip"],
-                "device_name": device["name"],
-                "status": "success",
-                "message": "audit completed",
-                "start_time": now,
-                "end_time": datetime.now().isoformat(timespec="seconds"),
-            }
-        )
-    return results
+    if not devices:
+        return []
+
+    rows, trace = run_audit_script(devices, params or {})
+    return map_audit_rows_to_results(devices, rows, trace)

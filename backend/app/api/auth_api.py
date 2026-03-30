@@ -12,5 +12,5 @@ class LoginRequest(BaseModel):
 @router.post("/login")
 def login(payload: LoginRequest):
     if payload.username == "admin" and payload.password == "admin123":
-        return {"token": "fake-jwt-token"}
+        return {"token": "fake-jwt-token", "username": "admin", "role": "admin"}
     raise HTTPException(status_code=401, detail="Invalid username or password")

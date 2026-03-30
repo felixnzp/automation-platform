@@ -3,8 +3,13 @@
 from app.models.device import Device
 
 
-def list_devices(db: Session, keyword: str | None = None):
+def list_devices(
+    db: Session,
+    keyword: str | None = None,
+    group_name: str | None = None,
+):
     query = db.query(Device)
+
     if keyword:
         like_pattern = f"%{keyword}%"
         query = query.filter(
@@ -13,6 +18,10 @@ def list_devices(db: Session, keyword: str | None = None):
             | (Device.group_name.like(like_pattern))
             | (Device.location.like(like_pattern))
         )
+
+    if group_name:
+        query = query.filter(Device.group_name == group_name)
+
     return query.order_by(Device.id.desc()).all()
 
 
@@ -55,3 +64,10 @@ def list_devices_by_ids(db: Session, ids: list[int]):
     if not ids:
         return []
     return db.query(Device).filter(Device.id.in_(ids)).all()
+
+
+def list_devices_by_ips(db: Session, ips: list[str]):
+    cleaned = [str(ip).strip() for ip in (ips or []) if str(ip).strip()]
+    if not cleaned:
+        return []
+    return db.query(Device).filter(Device.ip.in_(cleaned)).all()
